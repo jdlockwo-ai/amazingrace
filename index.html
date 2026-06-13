@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Vindictus Amazing Race Tracker</title>
+  <title>TBC Classic Amazing Race Tracker</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -11,8 +11,8 @@
 
   <header class="hero">
     <div class="hero__content">
-      <p class="eyebrow">Team Competition Tracker</p>
-      <h1 id="eventName">Vindictus Amazing Race</h1>
+      <p class="eyebrow">Horde Team Competition Tracker</p>
+      <h1 id="eventName">TBC Classic Amazing Race</h1>
       <div class="event-meta">
         <span id="eventDate">June 26th</span>
         <span>•</span>
@@ -23,11 +23,6 @@
       <div class="prize-strip">
         <span>🥇 1st Place: <strong id="firstPrize">1000g</strong></span>
         <span>🥈 2nd Place: <strong id="secondPrize">500g</strong></span>
-      </div>
-      <div class="background-picker" aria-label="Background image selector">
-        <button class="bg-choice" type="button" data-bg-index="0" aria-label="Use Horde background 1"></button>
-        <button class="bg-choice" type="button" data-bg-index="1" aria-label="Use Horde background 2"></button>
-        <button class="bg-choice" type="button" data-bg-index="2" aria-label="Use Horde background 3"></button>
       </div>
     </div>
   </header>
@@ -40,7 +35,7 @@
           <h2>Enter Your Team Code</h2>
         </div>
       </div>
-      <p class="muted">Your team will only see the next unlocked challenge. Future checkpoints remain hidden until a judge approves your current submission.</p>
+      <p class="muted">Your team will only see the next unlocked checkpoint. Future clue text stays hidden until a judge approves your current submission.</p>
       <div class="input-row">
         <input id="teamCodeInput" type="text" placeholder="Example: HORDE01" autocomplete="off" />
         <button id="loadTeamBtn" class="btn btn-primary">Load Team</button>
@@ -62,18 +57,22 @@
         </div>
       </div>
 
-      <div class="stats-grid">
+      <div class="stats-grid stats-grid--four">
         <div class="stat-card">
           <span class="stat-label">Progress</span>
           <strong id="progressStat">0 / 15</strong>
         </div>
         <div class="stat-card">
-          <span class="stat-label">Current Status</span>
-          <strong id="statusStat">Ready</strong>
+          <span class="stat-label">Race Time</span>
+          <strong id="raceTimeStat">--:--</strong>
         </div>
         <div class="stat-card">
           <span class="stat-label">Penalties</span>
           <strong id="penaltyStat">0 min</strong>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Adjusted Time</span>
+          <strong id="adjustedTimeStat">--:--</strong>
         </div>
       </div>
 
@@ -89,6 +88,19 @@
         <div class="proof-box">
           <strong>Proof Required:</strong>
           <span id="proofRequired"></span>
+        </div>
+        <div class="hint-panel" id="hintPanel">
+          <div class="hint-header">
+            <div>
+              <strong>Need a hint?</strong>
+              <span>Hints add time penalties automatically.</span>
+            </div>
+          </div>
+          <div class="hint-actions">
+            <button id="hint1Btn" class="btn btn-secondary" type="button">Use Hint 1 (+2 min)</button>
+            <button id="hint2Btn" class="btn btn-secondary" type="button">Use Hint 2 (+5 min)</button>
+          </div>
+          <div id="hintOutput" class="hint-output hidden"></div>
         </div>
       </article>
 
@@ -120,24 +132,11 @@
       <h2>Race Rules</h2>
       <div class="rules-grid">
         <div class="rule-card"><strong>Sequential Unlocks</strong><span>Only the current challenge is visible. Future challenges unlock after judge approval.</span></div>
-        <div class="rule-card"><strong>Teams of 3–5</strong><span>Use only your active race roster unless a judge approves a change.</span></div>
-        <div class="rule-card"><strong>Proof Required</strong><span>Submit screenshots, item links, typed answers, or judge-requested evidence.</span></div>
-        <div class="rule-card"><strong>No Outside Help</strong><span>Non-team members may not solve, submit, or interfere.</span></div>
-        <div class="rule-card"><strong>Hints Cost Time</strong><span>Hint penalties are added by judges and count toward final time.</span></div>
-        <div class="rule-card"><strong>Final Arena Bonus</strong><span>Checkpoint 15 gives time deductions based on duel arena placement.</span></div>
-      </div>
-    </section>
-
-    <section class="panel" id="arenaPanel">
-      <p class="section-kicker">Final Challenge</p>
-      <h2>Duel Arena Time Bonus</h2>
-      <p class="muted">The duel arena does not fully decide the event. It gives time deductions that are applied to each team’s race time.</p>
-      <div class="formula">Final Time = Race Time + Penalties − Arena Bonus</div>
-      <div class="bonus-grid">
-        <div><strong>🥇 Arena 1st</strong><span>−10 minutes</span></div>
-        <div><strong>🥈 Arena 2nd</strong><span>−6 minutes</span></div>
-        <div><strong>🥉 Arena 3rd</strong><span>−3 minutes</span></div>
-        <div><strong>Others</strong><span>No deduction</span></div>
+        <div class="rule-card"><strong>Teams of 3–5</strong><span>Teams must stay together unless a judge says otherwise.</span></div>
+        <div class="rule-card"><strong>Proof Required</strong><span>Submit screenshots, item links, typed answers, combat logs, or judge-requested evidence.</span></div>
+        <div class="rule-card"><strong>Race Timer</strong><span>Time starts when Checkpoint 1 is first submitted and stops when Checkpoint 14 is approved.</span></div>
+        <div class="rule-card"><strong>Hints Cost Time</strong><span>Hint 1 adds +2 minutes. Hint 2 adds +5 minutes. Rejected submissions may be resubmitted with no penalty.</span></div>
+        <div class="rule-card"><strong>Honor System</strong><span>No auction house, mailbox, bank, or alts for race tasks. Items must be collected during the race.</span></div>
       </div>
     </section>
 
@@ -156,10 +155,13 @@
               <th>Team</th>
               <th>Status</th>
               <th>Approved</th>
+              <th>Race Time</th>
+              <th>Penalties</th>
+              <th>Adjusted</th>
             </tr>
           </thead>
           <tbody id="leaderboardBody">
-            <tr><td colspan="3">Load the board to view public team status.</td></tr>
+            <tr><td colspan="6">Load the board to view public team status.</td></tr>
           </tbody>
         </table>
       </div>
@@ -167,7 +169,7 @@
   </main>
 
   <footer>
-    <p>Built for the Vindictus Amazing Race • Hosted on GitHub Pages • Powered by Google Sheets</p>
+    <p>Built for the TBC Classic Amazing Race • Hosted on GitHub Pages • Powered by Google Sheets</p>
   </footer>
 
   <script src="config.js"></script>

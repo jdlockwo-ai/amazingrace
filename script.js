@@ -9,6 +9,7 @@ const $ = (id) => document.getElementById(id);
 function init() {
   hydrateEventText();
   bindEvents();
+  applyBackground();
   checkConfig();
   if (state.teamCode) {
     $("teamCodeInput").value = state.teamCode;
@@ -29,12 +30,21 @@ function hydrateEventText() {
   document.title = `${APP_CONFIG.EVENT_NAME} Tracker`;
 }
 
+function applyBackground() {
+  const images = APP_CONFIG.BACKGROUND_IMAGES || [];
+  if (!images.length) return;
+  const chosen = images[Math.floor(Math.random() * images.length)];
+  document.body.style.setProperty("--bg-image", `url('${chosen}')`);
+}
+
 function bindEvents() {
   $("loadTeamBtn").addEventListener("click", loadTeam);
   $("refreshBtn").addEventListener("click", loadTeam);
   $("changeTeamBtn").addEventListener("click", changeTeam);
   $("submissionForm").addEventListener("submit", submitCheckpoint);
   $("loadBoardBtn").addEventListener("click", loadLeaderboard);
+  $("hint1Btn").addEventListener("click", () => requestHint(1));
+  $("hint2Btn").addEventListener("click", () => requestHint(2));
   $("teamCodeInput").addEventListener("keydown", (event) => {
     if (event.key === "Enter") loadTeam();
   });
@@ -44,7 +54,7 @@ function checkConfig() {
   if (!APP_CONFIG.GAS_URL || APP_CONFIG.GAS_URL.includes("PASTE_YOUR")) {
     const box = $("configWarning");
     box.classList.remove("hidden");
-    box.innerHTML = "<strong>Setup needed:</strong> Paste your Google Apps Script Web App URL into <code>config.js</code>. The page is ready, but live submissions will not work until that is set.";
+    box.innerHTML = "<strong>Setup needed:</strong> Paste your Google Apps Script Web App URL into <code>config.js</code>. Live submissions will not work until that is set.";
   }
 }
 
@@ -90,8 +100,9 @@ function renderTeamStatus(data) {
   $("teamNameDisplay").textContent = data.team.teamName;
   $("teamMembersDisplay").textContent = data.team.members ? `Members: ${data.team.members}` : "Members not listed";
   $("progressStat").textContent = `${data.progress.completed} / ${data.progress.total}`;
-  $("statusStat").textContent = data.currentSubmission ? titleCase(data.currentSubmission.status) : data.progress.completed >= data.progress.total ? "Finished" : "Available";
-  $("penaltyStat").textContent = `${data.team.penalties || 0} min`;
+  $("raceTimeStat").textContent = data.timing.raceTimeDisplay || "--:--";
+  $("penaltyStat").textContent = `${data.timing.penaltyMinutes || 0} min`;
+  $("adjustedTimeStat").textContent = data.timing.adjustedTimeDisplay || "--:--";
 
   renderMessage(data);
   renderChallenge(data);
@@ -120,7 +131,7 @@ function renderMessage(data) {
     box.className = "alert alert-error";
     box.textContent = data.currentSubmission.judgeNotes
       ? `Submission rejected: ${data.currentSubmission.judgeNotes}`
-      : "Submission rejected. Review your proof and submit again.";
+      : "Submission rejected. Review your proof and submit again. Resubmissions have no penalty.";
   }
 }
 
@@ -141,6 +152,7 @@ function renderChallenge(data) {
   $("checkpointTitle").textContent = cp.title;
   $("checkpointText").textContent = cp.challengeText;
   $("proofRequired").textContent = cp.proofRequired || "Judge verification";
+  renderHints(data);
 
   if (data.currentSubmission?.status === "Pending") {
     form.classList.add("hidden");
@@ -149,6 +161,47 @@ function renderChallenge(data) {
     $("answerInput").value = "";
     $("proofLinkInput").value = "";
     $("notesInput").value = "";
+  }
+}
+
+function renderHints(data) {
+  const used = data.usedHints || {};
+  const cp = data.currentCheckpoint || {};
+  const output = $("hintOutput");
+  output.innerHTML = "";
+  output.classList.add("hidden");
+
+  $("hint1Btn").disabled = !!used.hint1 || !cp.hint1;
+  $("hint2Btn").disabled = !!used.hint2 || !cp.hint2;
+  $("hint1Btn").textContent = used.hint1 ? "Hint 1 Used (+2 min)" : "Use Hint 1 (+2 min)";
+  $("hint2Btn").textContent = used.hint2 ? "Hint 2 Used (+5 min)" : "Use Hint 2 (+5 min)";
+
+  const hints = [];
+  if (used.hint1) hints.push(`<strong>Hint 1:</strong> ${escapeHtml(cp.hint1 || used.hint1)}`);
+  if (used.hint2) hints.push(`<strong>Hint 2:</strong> ${escapeHtml(cp.hint2 || used.hint2)}`);
+  if (hints.length) {
+    output.innerHTML = hints.map(h => `<div>${h}</div>`).join("");
+    output.classList.remove("hidden");
+  }
+}
+
+async function requestHint(hintNumber) {
+  if (!state.currentStatus) return;
+  const button = hintNumber === 1 ? $("hint1Btn") : $("hint2Btn");
+  setButtonLoading(button, true, "Loading Hint...");
+  try {
+    const data = await gasRequest("useHint", {
+      teamCode: state.teamCode,
+      checkpoint: state.currentStatus.currentCheckpoint.checkpoint,
+      hintNumber
+    });
+    if (!data.ok) throw new Error(data.error || "Could not load hint.");
+    showTeamMessage(data.alreadyUsed ? "Hint already used. No additional penalty added." : `Hint ${hintNumber} unlocked. +${data.penaltyMinutes} minute penalty added.`, "alert-warning");
+    await loadTeam();
+  } catch (error) {
+    showTeamMessage(error.message, "alert-error");
+  } finally {
+    setButtonLoading(button, false, hintNumber === 1 ? "Use Hint 1 (+2 min)" : "Use Hint 2 (+5 min)");
   }
 }
 
@@ -207,7 +260,7 @@ async function submitCheckpoint(event) {
 
 async function loadLeaderboard() {
   if (!isConfigured()) {
-    $("leaderboardBody").innerHTML = `<tr><td colspan="3">Add the Google Apps Script Web App URL in config.js first.</td></tr>`;
+    $("leaderboardBody").innerHTML = `<tr><td colspan="6">Add the Google Apps Script Web App URL in config.js first.</td></tr>`;
     return;
   }
   setButtonLoading($("loadBoardBtn"), true, "Loading...");
@@ -217,16 +270,16 @@ async function loadLeaderboard() {
     const body = $("leaderboardBody");
     body.innerHTML = "";
     if (!data.teams.length) {
-      body.innerHTML = `<tr><td colspan="3">No teams found.</td></tr>`;
+      body.innerHTML = `<tr><td colspan="6">No teams found.</td></tr>`;
       return;
     }
     data.teams.forEach((team) => {
       const tr = document.createElement("tr");
-      tr.innerHTML = `<td>${escapeHtml(team.teamName)}</td><td>${escapeHtml(team.publicStatus)}</td><td>${team.completed} / ${team.total}</td>`;
+      tr.innerHTML = `<td>${escapeHtml(team.teamName)}</td><td>${escapeHtml(team.publicStatus)}</td><td>${team.completed} / ${team.total}</td><td>${escapeHtml(team.raceTimeDisplay || "--:--")}</td><td>${team.penaltyMinutes || 0} min</td><td>${escapeHtml(team.adjustedTimeDisplay || "--:--")}</td>`;
       body.appendChild(tr);
     });
   } catch (error) {
-    $("leaderboardBody").innerHTML = `<tr><td colspan="3">${escapeHtml(error.message)}</td></tr>`;
+    $("leaderboardBody").innerHTML = `<tr><td colspan="6">${escapeHtml(error.message)}</td></tr>`;
   } finally {
     setButtonLoading($("loadBoardBtn"), false, "Update Board");
   }
@@ -299,11 +352,6 @@ function showTeamMessage(message, className) {
 function setButtonLoading(button, isLoading, text) {
   button.disabled = isLoading;
   button.textContent = text;
-}
-
-function titleCase(value) {
-  if (!value) return "";
-  return value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
 }
 
 function escapeHtml(value) {
