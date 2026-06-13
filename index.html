@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vindictus Amazing Race Tracker</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="bg-glow"></div>
+
+  <header class="hero">
+    <div class="hero__content">
+      <p class="eyebrow">Team Competition Tracker</p>
+      <h1 id="eventName">Vindictus Amazing Race</h1>
+      <div class="event-meta">
+        <span id="eventDate">June 26th</span>
+        <span>•</span>
+        <span id="eventTime">6:00 PM Server Time</span>
+        <span>•</span>
+        <span id="teamSize">Teams of 3–5</span>
+      </div>
+      <div class="prize-strip">
+        <span>🥇 1st Place: <strong id="firstPrize">1000g</strong></span>
+        <span>🥈 2nd Place: <strong id="secondPrize">500g</strong></span>
+      </div>
+      <div class="background-picker" aria-label="Background image selector">
+        <button class="bg-choice" type="button" data-bg-index="0" aria-label="Use Horde background 1"></button>
+        <button class="bg-choice" type="button" data-bg-index="1" aria-label="Use Horde background 2"></button>
+        <button class="bg-choice" type="button" data-bg-index="2" aria-label="Use Horde background 3"></button>
+      </div>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="panel login-panel" id="loginPanel">
+      <div class="panel-title-row">
+        <div>
+          <p class="section-kicker">Team Access</p>
+          <h2>Enter Your Team Code</h2>
+        </div>
+      </div>
+      <p class="muted">Your team will only see the next unlocked challenge. Future checkpoints remain hidden until a judge approves your current submission.</p>
+      <div class="input-row">
+        <input id="teamCodeInput" type="text" placeholder="Example: HORDE01" autocomplete="off" />
+        <button id="loadTeamBtn" class="btn btn-primary">Load Team</button>
+      </div>
+      <p class="small-note">Team codes are created in the Google Sheet by the event host.</p>
+      <div id="configWarning" class="alert alert-warning hidden"></div>
+    </section>
+
+    <section class="panel hidden" id="teamPanel">
+      <div class="team-header">
+        <div>
+          <p class="section-kicker">Current Team</p>
+          <h2 id="teamNameDisplay">Team Name</h2>
+          <p id="teamMembersDisplay" class="muted"></p>
+        </div>
+        <div class="team-actions">
+          <button id="refreshBtn" class="btn btn-secondary">Refresh</button>
+          <button id="changeTeamBtn" class="btn btn-ghost">Change Team</button>
+        </div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <span class="stat-label">Progress</span>
+          <strong id="progressStat">0 / 15</strong>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Current Status</span>
+          <strong id="statusStat">Ready</strong>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Penalties</span>
+          <strong id="penaltyStat">0 min</strong>
+        </div>
+      </div>
+
+      <div id="messageBox" class="alert hidden"></div>
+
+      <article class="challenge-card" id="challengeCard">
+        <div class="challenge-topline">
+          <span class="checkpoint-pill" id="checkpointNumber">Checkpoint 1</span>
+          <span class="type-pill" id="checkpointType">Challenge</span>
+        </div>
+        <h3 id="checkpointTitle">Loading...</h3>
+        <div class="challenge-body" id="checkpointText"></div>
+        <div class="proof-box">
+          <strong>Proof Required:</strong>
+          <span id="proofRequired"></span>
+        </div>
+      </article>
+
+      <form id="submissionForm" class="submission-form">
+        <h3>Submit Proof</h3>
+        <label>
+          Answer / Description
+          <textarea id="answerInput" rows="4" placeholder="Type your answer, location, NPC name, or a short description of your proof."></textarea>
+        </label>
+        <label>
+          Screenshot or Proof Link
+          <input id="proofLinkInput" type="url" placeholder="Paste Discord image link, Imgur link, Google Drive link, etc." />
+        </label>
+        <label>
+          Notes to Judge <span class="optional">optional</span>
+          <input id="notesInput" type="text" placeholder="Anything the judge should know?" />
+        </label>
+        <button class="btn btn-primary" type="submit">Submit Checkpoint</button>
+      </form>
+
+      <section class="progress-section">
+        <h3>Checkpoint Progress</h3>
+        <div id="progressTrack" class="progress-track"></div>
+      </section>
+    </section>
+
+    <section class="panel" id="rulesPanel">
+      <p class="section-kicker">Event Rules</p>
+      <h2>Race Rules</h2>
+      <div class="rules-grid">
+        <div class="rule-card"><strong>Sequential Unlocks</strong><span>Only the current challenge is visible. Future challenges unlock after judge approval.</span></div>
+        <div class="rule-card"><strong>Teams of 3–5</strong><span>Use only your active race roster unless a judge approves a change.</span></div>
+        <div class="rule-card"><strong>Proof Required</strong><span>Submit screenshots, item links, typed answers, or judge-requested evidence.</span></div>
+        <div class="rule-card"><strong>No Outside Help</strong><span>Non-team members may not solve, submit, or interfere.</span></div>
+        <div class="rule-card"><strong>Hints Cost Time</strong><span>Hint penalties are added by judges and count toward your overall race time.</span></div>
+        <div class="rule-card"><strong>Judges Have Final Say</strong><span>Approved submissions, penalties, and standings are confirmed by the event judges.</span></div>
+      </div>
+    </section>
+
+    <section class="panel" id="leaderboardPanel">
+      <div class="panel-title-row">
+        <div>
+          <p class="section-kicker">Public Status</p>
+          <h2>Team Status Board</h2>
+        </div>
+        <button id="loadBoardBtn" class="btn btn-secondary">Update Board</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Team</th>
+              <th>Status</th>
+              <th>Approved</th>
+            </tr>
+          </thead>
+          <tbody id="leaderboardBody">
+            <tr><td colspan="3">Load the board to view public team status.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>Built for the Vindictus Amazing Race • Hosted on GitHub Pages • Powered by Google Sheets</p>
+  </footer>
+
+  <script src="config.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
