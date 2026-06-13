@@ -1,68 +1,128 @@
-# TBC Classic Amazing Race Site
+# Vindictus Amazing Race Tracker
 
-A GitHub Pages site with a Google Sheets / Google Apps Script backend for a Horde-only TBC Classic Amazing Race event.
+A GitHub Pages website + Google Sheets backend for running a sequential in-game competition.
 
-## What This Version Does
-
-- Sequential checkpoint unlocking
-- Clue-based player-facing challenge text
-- Judge-only answers and notes in the spreadsheet
-- 15 checkpoints total
-- Race timer starts when a team first submits Checkpoint 1
-- Race timer stops when Checkpoint 14 is approved
-- Checkpoint 15 reveals Gurubashi Arena after the race timer is already locked
-- Hint 1 adds +2 minutes
-- Hint 2 adds +5 minutes
-- Rejected submissions can be resubmitted with no penalty
-- Team status board shows progress, race time, penalties, and adjusted time
-- Future challenge text is not sent to the browser until unlocked
+Teams only see their current unlocked checkpoint. Once a judge approves their submission in the Google Sheet, the next checkpoint unlocks automatically.
 
 ## Files
 
 ```text
-index.html
-style.css
-script.js
-config.js
-Code.gs
-assets/
+index.html      Main GitHub Pages site
+style.css       Site styling
+script.js       Site logic and Google Apps Script communication
+config.js       Event settings and Apps Script Web App URL
+Code.gs         Google Apps Script backend
+README.md       Setup instructions
 ```
 
-## Google Sheet Setup
+## What This Supports
 
-1. Create a Google Sheet.
-2. Go to **Extensions → Apps Script**.
-3. Paste the contents of `Code.gs` into Apps Script.
-4. Save.
-5. Run `setupAmazingRaceSheets` once.
-6. Approve permissions.
-7. Return to the sheet and edit the `Teams` tab with your real team codes, names, and members.
+- Team-code access
+- Sequential challenge unlocks
+- 15 checkpoint structure
+- Hidden future checkpoints
+- Proof submissions through the website
+- Judge approval through Google Sheets
+- Pending / approved / rejected status
+- Rejection notes shown to teams
+- Public team status board
+- Final duel arena time-bonus rules
 
-The setup function creates these tabs:
+## Step 1 — Create the Google Sheet Backend
 
-- `Teams`
-- `Checkpoints`
-- `Submissions`
-- `HintLog`
-- `Settings`
+1. Go to Google Drive.
+2. Create a new Google Sheet.
+3. Name it something like `Vindictus Amazing Race Backend`.
+4. Open the Sheet.
+5. Go to `Extensions` → `Apps Script`.
+6. Delete any starter code.
+7. Paste the full contents of `Code.gs`.
+8. Save the Apps Script project.
+9. Reload the Google Sheet.
+10. A new menu called `Amazing Race` should appear.
+11. Click `Amazing Race` → `Create / Reset Event Sheets`.
 
-## Deploy Apps Script
+This creates four tabs:
 
-1. In Apps Script, click **Deploy → New deployment**.
-2. Select **Web app**.
-3. Set **Execute as:** `Me`.
-4. Set **Who has access:** `Anyone`.
-5. Deploy.
-6. Copy the Web App URL.
-7. Paste it into `config.js`:
+```text
+Teams
+Checkpoints
+Submissions
+Settings
+```
+
+## Step 2 — Add Your Teams
+
+Open the `Teams` tab.
+
+Each team needs a unique team code.
+
+Example:
+
+| TeamCode | TeamName | Members |
+|---|---|---|
+| HORDE01 | Horde Hustlers | Name1, Name2, Name3 |
+| HORDE02 | Tauren Track Stars | Name1, Name2, Name3 |
+
+Give each team their own code before the event.
+
+Do not make team codes too obvious if you do not want teams opening each other’s checkpoint page.
+
+## Step 3 — Edit the Checkpoints
+
+Open the `Checkpoints` tab.
+
+You can edit:
+
+- Title
+- Type
+- ChallengeText
+- ProofRequired
+- Active
+
+The website will only show a team the checkpoint they currently have unlocked.
+
+Future checkpoint text is not sent to the website until the team reaches that checkpoint.
+
+## Step 4 — Deploy the Apps Script Web App
+
+In Apps Script:
+
+1. Click `Deploy` → `New deployment`.
+2. Choose type: `Web app`.
+3. Description: `Vindictus Amazing Race Backend`.
+4. Execute as: `Me`.
+5. Who has access: `Anyone`.
+6. Click `Deploy`.
+7. Authorize the script when prompted.
+8. Copy the Web App URL.
+
+The URL should look something like:
+
+```text
+https://script.google.com/macros/s/AKfycb.../exec
+```
+
+## Step 5 — Connect the Website
+
+Open `config.js`.
+
+Replace this:
 
 ```js
-GAS_URL: "https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec"
+GAS_URL: "PASTE_YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE",
 ```
 
-## GitHub Pages Setup
+with your deployed Apps Script Web App URL:
 
-Upload these files to your GitHub repository:
+```js
+GAS_URL: "https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec",
+```
+
+## Step 6 — Host on GitHub Pages
+
+1. Create a new GitHub repository.
+2. Upload these files:
 
 ```text
 index.html
@@ -70,62 +130,95 @@ style.css
 script.js
 config.js
 README.md
-assets/
 ```
 
-Then enable GitHub Pages from the repository settings.
+You do not need to upload `Code.gs` unless you want it stored in the repo for reference.
 
-## Judge Workflow
+3. Go to repository `Settings`.
+4. Open `Pages`.
+5. Set source to `Deploy from a branch`.
+6. Choose your main branch and root folder.
+7. Save.
+8. GitHub will give you a Pages URL.
 
-Judges should review submissions in the `Submissions` tab.
+## How Teams Submit Challenges
 
-Recommended approval method:
+1. Team opens the GitHub Pages site.
+2. Team enters their team code.
+3. The site loads only their current checkpoint.
+4. Team submits answer/proof.
+5. Submission appears in the `Submissions` tab as `Pending`.
+6. Judge changes status to `Approved` or `Rejected`.
+7. If approved, the next checkpoint unlocks.
+8. If rejected, the team sees the judge note and can resubmit.
 
-1. Select the submission row.
-2. Use **Amazing Race → Approve Selected Submission**.
-3. Or use **Amazing Race → Reject Selected Submission**.
+## Judge Approval Workflow
 
-This automatically writes review timestamps and recalculates team progress/timing.
+Open the `Submissions` tab.
 
-Manual editing also works by changing `Status` to `Approved` or `Rejected`, but the timer is most accurate when using the menu approval buttons.
-
-## Editing Challenges
-
-You can edit the `Checkpoints` tab to update the website. The site reads challenge text from the sheet every time a team loads its current checkpoint.
-
-Safe columns to edit:
+For each submission, update the `Status` column:
 
 ```text
-Title
-Type
-ChallengeText
-ProofRequired
-Hint1
-Hint2
-JudgeAnswer
-Notes
-Active
+Pending
+Approved
+Rejected
 ```
 
-Do not rename the column headers unless you also update `Code.gs`.
+Optional:
 
-## Important Race Rules Built Into This Version
+- Add feedback in `JudgeNotes`.
+- Add time penalties in `PenaltyMinutes`.
+- Add reviewer name in `ReviewedBy`.
+- Add review time in `ReviewedAt`.
 
-- Level 70 Horde-only teams
-- Teams of 3–5
-- Teams must stay together
-- Any travel is allowed: flying, hearths, summons, portals, boats, zeppelins, flight paths
-- No auction house, bank, mailbox, or alts during the race
-- Outside resources are allowed
-- Item collection must happen during the race
-- No fishing challenges
+The website checks the Sheet each time the team refreshes. If a submission is pending, the site auto-refreshes every 20 seconds.
 
-## Checkpoint 15
+## Final Arena Scoring
 
-Checkpoint 15 reveals:
+This site includes the final arena rules:
 
 ```text
-Report to Gurubashi Arena in Stranglethorn Vale and wait for judge instructions.
+Final Time = Race Time + Penalties − Arena Bonus
 ```
 
-The site does not mention any final duel or final challenge mechanics. It only gives the final location after Checkpoint 14 is approved.
+Recommended arena bonuses:
+
+```text
+1st Place Arena Finish: −10 minutes
+2nd Place Arena Finish: −6 minutes
+3rd Place Arena Finish: −3 minutes
+All Other Teams: No deduction
+```
+
+You can track final arena placement in the `Teams` tab:
+
+- ArenaPlace
+- ArenaBonusMinutes
+- PenaltiesMinutes
+- Checkpoint14Finish
+
+## Important Notes
+
+GitHub Pages is static hosting. It cannot securely store submissions by itself. The Google Apps Script + Google Sheet backend is what stores team submissions and controls challenge unlocking.
+
+The website uses JSONP requests to avoid browser CORS issues when communicating between GitHub Pages and Google Apps Script.
+
+## Recommended Event Operation
+
+Before the event:
+
+- Add real teams and team codes.
+- Edit all 15 checkpoint clues.
+- Test one full team flow.
+- Test approving and rejecting submissions.
+- Keep the Google Sheet open for judges.
+
+During the event:
+
+- Teams submit from the website.
+- Judges approve/reject in the Sheet.
+- Teams refresh or wait for auto-refresh.
+- After Checkpoint 14, record race times.
+- Run the final Duel Arena spectator challenge.
+- Apply arena bonuses.
+- Announce final adjusted times.
