@@ -5,7 +5,7 @@
 */
 
 const APP_CONFIG = {
-  GAS_URL: "https://script.google.com/macros/s/AKfycbylmnJLp9ztMXrSy9Ayg1G6FVlwnyz0OhmYYtRL_Gf_gHOmUgbMtWsb_aJVQuZvYcCb/exec",
+  GAS_URL: "https://script.google.com/macros/s/AKfycbx04x8qJDZ7Ef3u8ElDMQOAPd1wzCuiP4DLrefx34F9EPVascZqr2RDw5B1EmLckJea/exec",
 
   EVENT_NAME: "TBC Classic Amazing Race",
   EVENT_TAGLINE: "Horde-only • Level 70 • Sequential checkpoint race",
