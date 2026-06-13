@@ -6,7 +6,7 @@
 
 const APP_CONFIG = {
   // Paste your deployed Google Apps Script Web App URL here.
-  GAS_URL: "PASTE_YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE",
+  GAS_URL: "https://script.google.com/macros/s/AKfycbySPWuEQNXDS46lvxMeAhLYFdatqyX7EbZk__mw5vqjyByfCdCYS8YPKFCy9rKBLdiL/exec",
 
   EVENT_NAME: "Vindictus Amazing Race",
   EVENT_DATE: "June 26th",
