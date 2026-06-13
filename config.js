@@ -5,7 +5,7 @@
 */
 
 const APP_CONFIG = {
-  GAS_URL: "https://script.google.com/macros/s/AKfycby-lTdDfc4cn1lTcx_BmKiXFOlRHNK1dwm00wqmmZBc_1ILCAQ7BJdi0r7WWmLmteQo/exec",
+  GAS_URL: "https://script.google.com/macros/s/AKfycbxmXJ8GLCFDtF5US_DBEjBAhaVpcbSDLdVuaKctvkanHDSwyvsCpRUUFKuFge4Qthqd/exec",
 
   EVENT_NAME: "TBC Classic Amazing Race",
   EVENT_DATE: "June 26th",
